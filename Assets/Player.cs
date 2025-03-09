@@ -15,19 +15,21 @@ public class Player : MonoBehaviour
 
     private bool playerUnlocked;
     private bool canDoubleJump;
-    private float defaultJumpPorce;
+
 
 
     [Header("Collision info")]
     [SerializeField] private float groundCheckDistance;
     [SerializeField] private LayerMask whatIsGround;
+    [SerializeField] private Transform wallCheck;
+    [SerializeField] private Vector2 wallCheckSize;
+    private bool wallDetected;
     private bool isGrounded;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
-        defaultJumpPorce = jumpForce;
         
     }
 
@@ -36,11 +38,12 @@ public class Player : MonoBehaviour
     {
         AnimatorController();
 
-        if (playerUnlocked)
+        if (playerUnlocked && !wallDetected)
         {
 
             rb.linearVelocity = new Vector2(moveSpeed, rb.linearVelocityY);
         }
+        if(isGrounded) canDoubleJump = true;
 
 
         checkCollision();
@@ -59,6 +62,7 @@ public class Player : MonoBehaviour
     private void checkCollision()
     {
         isGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, whatIsGround);
+        wallDetected = Physics2D.BoxCast(wallCheck.position, wallCheckSize, 0, Vector2.zero, 0, whatIsGround);
     }
 
     private void checkInput()
@@ -81,21 +85,20 @@ public class Player : MonoBehaviour
 
         if (isGrounded)
         {
-            canDoubleJump = true;
+            
             rb.linearVelocity = new Vector2(rb.linearVelocityX, jumpForce);
 
         }
         else if (canDoubleJump)
         {
-            jumpForce = doubleJumpForce;
             canDoubleJump = false;
-            rb.linearVelocity = new Vector2(rb.linearVelocityX, jumpForce);
-            jumpForce = defaultJumpPorce;
+            rb.linearVelocity = new Vector2(rb.linearVelocityX, doubleJumpForce);
         }
     }
 
     private void OnDrawGizmos()
     {
         Gizmos.DrawLine(transform.position, new Vector2(transform.position.x, transform.position.y - groundCheckDistance));
+        Gizmos.DrawWireCube(wallCheck.position, wallCheckSize);
     }
 }
