@@ -11,8 +11,11 @@ public class Player : MonoBehaviour
     [Header("Move infor")]
     [SerializeField] private float moveSpeed;
     [SerializeField] private float jumpForce;
+    [SerializeField] private float doubleJumpForce;
 
     private bool playerUnlocked;
+    private bool canDoubleJump;
+    private float defaultJumpPorce;
 
 
     [Header("Collision info")]
@@ -24,6 +27,7 @@ public class Player : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+        defaultJumpPorce = jumpForce;
         
     }
 
@@ -46,6 +50,7 @@ public class Player : MonoBehaviour
 
     private void AnimatorController()
     {
+        anim.SetBool("canDoubleJump", canDoubleJump);
         anim.SetBool("isGrounded", isGrounded);
         anim.SetFloat("xValocity", rb.linearVelocityX);
         anim.SetFloat("yValocity", rb.linearVelocityY);
@@ -64,10 +69,28 @@ public class Player : MonoBehaviour
         }
 
 
-        if (Input.GetButtonDown("Jump") && isGrounded)
+        if (Input.GetButtonDown("Jump"))
         {
+            JumpButton();
+
+        }
+    }
+
+    private void JumpButton()
+    {
+
+        if (isGrounded)
+        {
+            canDoubleJump = true;
             rb.linearVelocity = new Vector2(rb.linearVelocityX, jumpForce);
-            Debug.Log("jump");
+
+        }
+        else if (canDoubleJump)
+        {
+            jumpForce = doubleJumpForce;
+            canDoubleJump = false;
+            rb.linearVelocity = new Vector2(rb.linearVelocityX, jumpForce);
+            jumpForce = defaultJumpPorce;
         }
     }
 
