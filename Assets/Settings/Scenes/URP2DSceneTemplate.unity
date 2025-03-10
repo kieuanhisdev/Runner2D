@@ -9450,6 +9450,9 @@ MonoBehaviour:
   moveSpeed: 10
   jumpForce: 12
   doubleJumpForce: 20
+  slideSpeed: 20
+  slideTime: 0.4
+  slideCoolDown: 2
   groundCheckDistance: 1.4
   whatIsGround:
     serializedVersion: 2

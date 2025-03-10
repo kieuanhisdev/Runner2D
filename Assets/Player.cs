@@ -13,6 +13,16 @@ public class Player : MonoBehaviour
     [SerializeField] private float jumpForce;
     [SerializeField] private float doubleJumpForce;
 
+    [Header("Slide info")]
+    [SerializeField] private float slideSpeed;
+    [SerializeField] private float slideTime;
+    [SerializeField] private float slideCoolDown;
+    [SerializeField] private float cellingCheckDistance;
+    private float slideCoolDownCouter;
+    private float slideTimeCouter;
+    private bool isSliding;
+    private bool cellingDistance;
+
     private bool playerUnlocked;
     private bool canDoubleJump;
 
@@ -38,32 +48,44 @@ public class Player : MonoBehaviour
     {
         AnimatorController();
 
-        if (playerUnlocked && !wallDetected)
+        if (playerUnlocked)
         {
-
-            rb.linearVelocity = new Vector2(moveSpeed, rb.linearVelocityY);
+            Movenment();
         }
-        if(isGrounded) canDoubleJump = true;
+        if (isGrounded) canDoubleJump = true;
 
+        slideTimeCouter -= Time.deltaTime;
+        slideCoolDownCouter -= Time.deltaTime;
 
         checkCollision();
+        checkForSlide();
 
         checkInput();
     }
 
-    private void AnimatorController()
+    private void checkForSlide()
     {
-        anim.SetBool("canDoubleJump", canDoubleJump);
-        anim.SetBool("isGrounded", isGrounded);
-        anim.SetFloat("xValocity", rb.linearVelocityX);
-        anim.SetFloat("yValocity", rb.linearVelocityY);
+        if (slideTimeCouter < 0  && !cellingDistance)
+        {
+            isSliding = false;
+        }
     }
 
-    private void checkCollision()
+    private void Movenment()
     {
-        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, whatIsGround);
-        wallDetected = Physics2D.BoxCast(wallCheck.position, wallCheckSize, 0, Vector2.zero, 0, whatIsGround);
+        if (wallDetected) return;
+
+        if (isSliding)
+        {
+            rb.linearVelocity = new Vector2(slideSpeed, rb.linearVelocityY);
+        }
+        else
+        {
+            rb.linearVelocity = new Vector2(moveSpeed, rb.linearVelocityY);
+        }
     }
+
+
 
     private void checkInput()
     {
@@ -78,10 +100,27 @@ public class Player : MonoBehaviour
             JumpButton();
 
         }
+
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            slideButton();
+        }
+    }
+
+    private void slideButton()
+    {
+        if (rb.linearVelocityX != 0 && slideCoolDownCouter < 0)
+        {
+            isSliding = true;
+            slideTimeCouter = slideTime;
+            slideCoolDownCouter = slideCoolDown;
+        }
+
     }
 
     private void JumpButton()
     {
+        if (isSliding) return;
 
         if (isGrounded)
         {
@@ -96,9 +135,24 @@ public class Player : MonoBehaviour
         }
     }
 
+    private void AnimatorController()
+    {
+        anim.SetBool("canDoubleJump", canDoubleJump);
+        anim.SetBool("isGrounded", isGrounded);
+        anim.SetBool("isSliding", isSliding);
+        anim.SetFloat("xValocity", rb.linearVelocityX);
+        anim.SetFloat("yValocity", rb.linearVelocityY);
+    }
+    private void checkCollision()
+    {
+        isGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, whatIsGround);
+        cellingDistance = Physics2D.Raycast(transform.position, Vector2.up, cellingCheckDistance, whatIsGround);
+        wallDetected = Physics2D.BoxCast(wallCheck.position, wallCheckSize, 0, Vector2.zero, 0, whatIsGround);
+    }
     private void OnDrawGizmos()
     {
         Gizmos.DrawLine(transform.position, new Vector2(transform.position.x, transform.position.y - groundCheckDistance));
+        Gizmos.DrawLine(transform.position, new Vector2(transform.position.x, transform.position.y + cellingCheckDistance));
         Gizmos.DrawWireCube(wallCheck.position, wallCheckSize);
     }
 }
