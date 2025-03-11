@@ -36,6 +36,18 @@ public class Player : MonoBehaviour
     private bool wallDetected;
     private bool isGrounded;
 
+    [Header("Ledge info")]
+    [SerializeField] private Vector2 offset1;
+    [SerializeField] private Vector2 offset2;
+
+    private Vector2 climbBegunPosition;
+    private Vector2 climbOverPosition;
+
+    private bool canGrabLedge = true;
+    private bool canClimb;
+
+    [HideInInspector] public bool ledgeDetected;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -61,7 +73,41 @@ public class Player : MonoBehaviour
         checkForSlide();
 
         checkInput();
+
+        CheckForLedge();
     }
+
+    private void CheckForLedge()
+    {
+        if (ledgeDetected && canGrabLedge)
+        {
+            canGrabLedge = false;
+            rb.gravityScale = 0;
+
+            Vector2 ledgePosition = GetComponentInChildren<LedgeDetection>().transform.position;
+
+            climbBegunPosition = ledgePosition + offset1;
+            climbOverPosition = ledgePosition + offset2;
+
+            canClimb = true;
+        }
+
+        if (canClimb)
+            transform.position = climbBegunPosition;
+    }
+
+    private void LedgeClimbOver()
+    {
+
+        canClimb = false;
+        rb.gravityScale = 5;
+        transform.position = climbOverPosition;
+        rb.linearVelocity = Vector2.zero;
+        Invoke("AllowLedgeGrab", .1f);
+    }
+
+    private void AllowLedgeGrab() => canGrabLedge = true;
+
 
     private void checkForSlide()
     {
@@ -120,7 +166,7 @@ public class Player : MonoBehaviour
 
     private void JumpButton()
     {
-        if (isSliding) return;
+        if (isSliding || canClimb) return;
 
         if (isGrounded)
         {
@@ -142,12 +188,14 @@ public class Player : MonoBehaviour
         anim.SetBool("isSliding", isSliding);
         anim.SetFloat("xValocity", rb.linearVelocityX);
         anim.SetFloat("yValocity", rb.linearVelocityY);
+        anim.SetBool("canClimb", canClimb);
     }
     private void checkCollision()
     {
         isGrounded = Physics2D.Raycast(transform.position, Vector2.down, groundCheckDistance, whatIsGround);
         cellingDistance = Physics2D.Raycast(transform.position, Vector2.up, cellingCheckDistance, whatIsGround);
         wallDetected = Physics2D.BoxCast(wallCheck.position, wallCheckSize, 0, Vector2.zero, 0, whatIsGround);
+        Debug.Log(ledgeDetected);
     }
     private void OnDrawGizmos()
     {
